@@ -1,10 +1,11 @@
-from crud.Crud_User import User_Crud
+from core.security import get_current_user
+from crud.Crud_User import user_crud
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.request import RequestClient
 from api import crud, models, schemas
 from api import deps
-from schemas.schema_user import UserInBase, UserUpdate, UserCreate
+from schemas.schema_user import UserInBase, UserUpdate, UserCreate, User
 from typing import Any, List
 import logging
 
@@ -23,7 +24,7 @@ async def read_user(
 ) -> Any:
 
     logger.info("Consultando Relatorio")
-    user_list = await User_Crud.get_multi(db=db, skip=skip, limit=limit,)
+    user_list = await user_crud.get_multi(db=db, skip=skip, limit=limit,)
 
     return user_list
 
@@ -38,7 +39,7 @@ async def especific_user(
 
 ) -> Any:
 
-    user_id_list = await User_Crud.get(db=db, id=id)
+    user_id_list = await user_crud.get(db=db, id=id)
 
     return user_id_list
 
@@ -53,7 +54,7 @@ async def create_user(
 
 ) -> Any:
 
-    user_create = await User_Crud.create(db=db, obj_in=category_in)
+    user_create = await user_crud.create(db=db, obj_in=category_in)
     return user_create
 
 
@@ -68,12 +69,12 @@ async def delete_user(
     """
     Delete an item.
     """
-    user_delete = await User_Crud.get(db=db, id=id)
+    user_delete = await user_crud.get(db=db, id=id)
 
     if not user_delete:
 
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
-    user_delete = await User_Crud.remove(db=db, id=id)
+    user_delete = await user_crud.remove(db=db, id=id)
 
     return user_delete
 
@@ -89,8 +90,13 @@ async def put_user(
 
 
 ) -> Any:
-    busc_id = await User_Crud.get(db=db, id=id)
+    busc_id = await user_crud.get(db=db, id=id)
 
-    update_user = await User_Crud.update(db=db, db_obj=busc_id, obj_in=category_update)
+    update_user = await user_crud.update(db=db, db_obj=busc_id, obj_in=category_update)
 
     return update_user
+
+
+@router.get("/me")
+async def read_me(current_user: User = Depends(get_current_user)):
+    return {"email": current_user.email}

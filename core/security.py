@@ -1,78 +1,59 @@
-
-
-# security.py → Funções de autenticação e geração de tokens(JWT).
-import secrets
-from core.config import Settings
-from pydantic_settings import BaseSettings
-from passlib.context import CryptContext
-from pytz import timezone
-from typing import Optional, List
 from datetime import datetime, timedelta
-from fastapi.security import OAuth2AuthorizationCodeBearer
-from sqlalchemy.future import select
+from typing import Optional
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from jose import jwt
-import models.model_user import Base
+
 from core.config import settings
-from core.config import verificar_senha
-from pydantic import EmailStr
+from db.session import get_db
 from models.model_user import User
 
-
-CRIPTO = CryptContext(schemas=['bcrypt'], deprecated='auto')
-
-
-def verificar_senha(senha: str, has_senha: str) -> bool:
-    pass
-
-    return CRIPTO.verify(senha, has_senha)
+pwd_context = CryptContext(
+    schemes=["bcrypt", ], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"/ api/v1/auth/generate_token")
 
 
-def gerar_hash_senha(senha: str) -> str:
-
-    return CRIPTO.hash(senha)
-
-
-# Verificação
-
-oauth2_schemas = OAuth2AuthorizationCodeBearer(
-    tokenUrl="{setting.API_V1_STR}/usuarios/login"
-)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-async def autenticar(email: EmailStr, senha: str, db: AsyncSession) -> Optional[User]:
-    async with db as session:
-        query = select(User).filter(User.email == email)
-        result = await session.execute(query)
-        usuario = User = result.scalar().unique().one_or_none()
-
-    if not usuario:
-        return None
-
-    if not verificar_senha(senha, usuario.senha):
-        return None
-    return usuario
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
 
-def _criar_token(tipo_token: str, tempo_vida: timedelta, sub: str) -> str:
-    payload = {}
-    sp = timezone('America/São Paulo')
-    expira = datetime.now(tz=sp) + tempo_vida
-
-    payload['type'] = tipo_token
-    payload['exp'] = expira
-    payload['iat'] = datetime.now(tz=sp)
-    payload['sub'] = str(sub)
-    return jwt.encode(payload, settings.JWT.SECRETS, algorithm=settings.ALGORITHM)
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + \
+        (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, settings.JWT_SECRETS, algorithm=settings.ALGORITHM)
 
 
-def criar_token_acesso(subs: str) -> str:
-    '''
-    https://jwt.io
-    '''
-    return _criar_token(
-        tipo_token='access_token',
-        tempo_vida=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        subs=subs
+def decode_token(token: str):
+    try:
+        return jwt.decode(token, settings.JWT_SECRETS, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido ou expirado")
 
-    )
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+
+    from crud.Crud_User import user_crud
+
+    payload = decode_token(token)
+    email: str = payload.get("sub")
+
+    if email is None:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+
+    user = await user_crud.get_by_email(db=db, email=email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+    return user

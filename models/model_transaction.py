@@ -28,6 +28,7 @@ class Transaction(Base):
     # Relacionamento com Category
     category_id = Column(Integer, ForeignKey(
         "finance_rafa_TB_Categories.id"), nullable=False)
+
     category = relationship("Category", back_populates="transactions")
 
     # Relacionamento com User (se já tiver user model)

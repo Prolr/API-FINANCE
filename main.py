@@ -8,11 +8,12 @@ from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.openapi.utils import get_openapi
+from api import deps
+from api.api_v1.endpoints import login
 
 
 def api_factory():
     app = FastAPI(title=settings.PROJECT_NAME,
-                  root_path="/FINANCE",
                   version='0.0.1',
                   description='APIs FINANCEIRO',
                   )
@@ -31,7 +32,7 @@ def api_factory():
             allow_headers=["*"],
         )
 
-    app.include_router(api_router, prefix=settings.API_V1_STR)
+    app.include_router(api_router, prefix="/api/v1")
 
     return app
 

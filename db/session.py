@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from core.config import settings
-
+from contextlib import asynccontextmanager
 
 # PostgreSQL (assíncrono)
 engine_psql = create_async_engine(
@@ -45,3 +45,11 @@ SessionLocal_211 = sessionmaker(
     autoflush=False,
     bind=engine_211
 )
+
+
+async def get_db():
+    db = SessionLocal_psql()
+    try:
+        yield db
+    finally:
+        await db.close()

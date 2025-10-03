@@ -1,0 +1,43 @@
+
+
+
+
+# ALTERE CONFORME SEU USO E NECESSIDADE!
+
+
+
+
+
+
+
+# version: "3.9"
+
+# services:
+  # api:
+  #   build: .
+  #   container_name: finance_api
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - db
+    # environment:
+      # URL de conexão que sua API e Alembic vão usar
+    #   DATABASE_URL: postgresql+asyncpg://user:password@db:5432/finance_db
+    # volumes:
+      # - .:/app   monta seu código local (opcional, útil em dev)
+
+#   db:
+#     image: postgres:15
+#     container_name: finance_db
+#     restart: always
+#     environment:
+#       POSTGRES_USER: user
+#       POSTGRES_PASSWORD: password
+#       POSTGRES_DB: finance_db
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata:

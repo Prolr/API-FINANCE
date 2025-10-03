@@ -1,11 +1,13 @@
 from typing import Any, List
 import logging
+from core.security import get_current_user
 from crud.Crud_Category import category_crud
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.request import RequestClient
 from api import crud, models, schemas
 from api import deps
+from models.model_user import User
 from schemas.schema_category import CategoryInBase, CategoryUpdate, CategoryCreate
 
 router = APIRouter()

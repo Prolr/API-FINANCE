@@ -20,7 +20,7 @@ class TransactionCreate(TransactionBase):
 
 
 class TransactionUpdate(TransactionBase):
-    pass
+    type: str
 
 
 class TransactionInBase(TransactionBase):
